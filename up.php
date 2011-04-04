@@ -9,28 +9,34 @@
    * 
    */
 
-include_once 'config.php';
-include_once 'common.php';
+include_once 'config/config.php';
+include_once 'utils/common.php';
+include_once 'classes/Db.class.php';
+include_once 'classes/Renderer.class.php';
 
-$vcontent = array();
-$vcontent['main'] = '';
+$content = '';
 
 if (!(isset($_GET['u'])) || $_GET['u'] == '') {
-    $vcontent['main'] .= "OOpssss";
+    $content .= "OOpssss";
   }
  else {
      $u = htmlentities($_GET['u']);
 
-     $link = sql_connect($conf['sql']['host'], $conf['sql']['user'], $conf['sql']['password'], $conf['sql']['db']);
-     if (!$link)
-       die('Connexion impossible...');
-     if (!(check_u($u))) {
-	 $vcontent['main'] .= "OOpssss Can't find that form";
-	 mysql_close($link);
+     $db = Db::getInstance();
+
+     if (!$db->connect($conf['sql']['host'], $conf['sql']['user'], $conf['sql']['password'], $conf['sql']['db'])) {
+       echo 'can\'t connect to db';
+       return;
+     }
+
+
+     if (!(check_form($u))) {
+       $content .= "OOpssss Can't find that form";
+       $db->close();
        }
      else {
-	 mysql_close($link);
-	 $vcontent['main'] .= '
+       $db->close();
+       $content .= '
 <form method="post" action="post.php" enctype="multipart/form-data">
      <input type="hidden" name="u" id="u" value="' . $u . '" />
      <input type="file" name="file" id="file" /><br />
@@ -40,7 +46,9 @@ if (!(isset($_GET['u'])) || $_GET['u'] == '') {
      }
  }
 
-render('default', $vcontent);
+$renderer = new Renderer();
+$renderer->setContent($content);
+$renderer->render();
 ?>
 
 

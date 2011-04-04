@@ -8,11 +8,14 @@
    * 
    * 
    */
+
 session_start();
 session_destroy();
-include_once 'common.php';
+include_once 'classes/Renderer.class.php';
 
-$vcontent['main'] = '
+
+
+$content = '
 	  <div class="step">
 	    1. Log into Dropbox.<br /><br /><br /><br />
 	    <img src="img/dropbox-icon.png" alt="" />
@@ -33,5 +36,8 @@ $vcontent['main'] = '
 	</div>
 ';
 
-render('default', $vcontent);
+$renderer = new Renderer();
+$renderer->setContent($content);
+$renderer->render();
+
 ?>

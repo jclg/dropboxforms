@@ -10,42 +10,51 @@
    */
 
 
-include_once 'config.php';
-include_once 'common.php';
+include_once 'config/config.php';
+include_once 'utils/common.php';
+include_once 'classes/Db.class.php';
+include_once 'classes/Renderer.class.php';
 
-$vcontent = array();
-$vcontent['main'] = '';
+
+$renderer = new Renderer();
+$content = '';
 
 if (!(isset($_POST['u']))) {
-    $vcontent['main'] .= "OOpssss";
-    render('default', $vcontent);
+    $content .= "OOpssss";
+    $renderer->setContent($content);
+    $renderer->render();
   }
 $u = htmlentities($_POST['u']);
 
+
+
 // On recupere les tokens dans la bdd
-$link = sql_connect($conf['sql']['host'], $conf['sql']['user'], $conf['sql']['password'], $conf['sql']['db']);
-if (!$link)
-  die('Connexion impossible...');
+$db = Db::getInstance();
+if (!$db->connect($conf['sql']['host'], $conf['sql']['user'], $conf['sql']['password'], $conf['sql']['db'])) {
+  echo 'can\'t connect to db';
+  return;
+ }
 if (!($tokens = get_tokens($u))) {
-    $vcontent['main'] .= "OOopss Can't find that form";
-    mysql_close($link);
-    render('default', $vcontent);
+    $content .= "OOopss Can't find that form";
+    $db->close();
+    $renderer->setContent($content);
+    $renderer->render();
   }
-mysql_close($link);
+$db->close();
 
 
 
-
-//Verifier si le fichier recu est goodard
-
+//Verifier si le fichier recu est good
 if ($_FILES['file']['error'] != UPLOAD_ERR_OK) {
-    $vcontent['main'] .= 'Erreur lors de l\'upload du fichier';
-    render('default', $vcontent);
+    $content .= 'Erreur lors de l\'upload du fichier';
+    $renderer->setContent($content);
+    $renderer->render();
  }
 
 if (move_uploaded_file($_FILES['file']['tmp_name'], "/tmp/" . $_FILES['file']['name']) === FALSE) {
-  $vcontent['main'] .= 'Erreur lors du deplacement du fichier';
-  render('default', $vcontent);
+  $content .= 'Erreur lors du deplacement du fichier';
+    $renderer->setContent($content);
+    $renderer->render();
  }
 $file = "/tmp/" . $_FILES['file']['name'];
 
@@ -94,21 +103,23 @@ curl_close($ch);
 
 
 if (strpos($data, 'winner!') !== FALSE) {
-  $vcontent['main'] .= '---<br />
+  $content .= '---<br />
   The file ' . htmlentities(basename($file)) . ' is now in the Dropbox :)
   <br />---<br />
   <a href="up.php?u=' . $u . '">Upload another file</a>
 ';
  }
 else {
-    $vcontent['main'] .= 'Something goes wrong from Dropbox :S<br />
+    $content .= 'Something goes wrong from Dropbox :S<br />
     <a href="up.php?u=' . $u . '">Retry to upload file</a>
 ';
   }
 
+
 // rm du fichier tmp
 @unlink($file);
 
-render('default', $vcontent);
+$renderer->setContent($content);
+$renderer->render();
 
 ?>

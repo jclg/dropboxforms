@@ -11,11 +11,13 @@
 
 session_start();
 
-include_once 'config.php';
-include_once 'common.php';
+include_once 'config/config.php';
+include_once 'utils/common.php';
+include_once 'classes/Db.class.php';
+include_once 'classes/Renderer.class.php';
 
-$vcontent = array();
-$vcontent['main'] = '';
+
+$content = '';
 
 $tokens = $_SESSION['oauth_tokens'];
 
@@ -28,27 +30,35 @@ curl_close($ch);
 
 
 if (strpos($data, 'error') !== FALSE) {
-  $vcontent['main'] .= 'Oops, it seems you are not associated with your dropbox account :(';
-  $vcontent['main'] .= '<br /><a href="auth.php">Click here to retry</a>';
+  $content .= 'Oops, it seems you are not associated with your dropbox account :(';
+  $content .= '<br /><a href="auth.php">Click here to retry</a>';
  }
  else {
    if (!isset($_SESSION['u'])) {
      parse_str($data, $tokens);
      $_SESSION['oauth_tokens'] = $tokens;
      $_SESSION['u'] = random_string();
-     $link = sql_connect($conf['sql']['host'], $conf['sql']['user'], $conf['sql']['password'], $conf['sql']['db']);
-     if (!$link)
-       die('Connexion impossible...');
-     insert_row($_SESSION['u'], $tokens['oauth_token'], $tokens['oauth_token_secret']);
-     mysql_close($link);
+
+
+     $db = Db::getInstance();
+
+     if (!$db->connect($conf['sql']['host'], $conf['sql']['user'], $conf['sql']['password'], $conf['sql']['db'])) {
+       echo 'can\'t connect to db';
+       return;
+     }
+     insert_form($_SESSION['u'], $tokens['oauth_token'], $tokens['oauth_token_secret']);
+     $db->close();
    }
 
    $url_form = $conf['url'] . 'up.php?u=' . $_SESSION['u'];
-   $vcontent['main'] .= 'Cool, you are associated. Here is the link to your upload form: <br />
+   $content .= 'Cool, you are associated. Here is the link to your upload form: <br />
    <a href="' . $url_form . '" target="_blank">' . $url_form . '</a>
    <br />You can give this link to your friends ^^';
  }
 
-render('default', $vcontent);
+
+$renderer = new Renderer();
+$renderer->setContent($content);
+$renderer->render();
 
 ?>
