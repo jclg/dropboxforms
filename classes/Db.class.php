@@ -10,9 +10,6 @@
    * 
    */
 
-
-require_once 'config/config.php';
-
 class Db {
   private $_link;
   private static $_instance = null;
